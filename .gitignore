@@ -14,7 +14,8 @@ cache/
 # Dev junk
 .ipynb_checkpoints/
 *.ipynb
-.superpowers/
+.superpowers*/
+CLAUDE*
 f1_table.txt
 instruction.txt
 plan.md
