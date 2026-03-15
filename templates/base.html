@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Калькулятор податків Freedom24</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px;
+           color: #1e293b; background: #f8fafc; line-height: 1.5; }
+    .container { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+
+    /* Flash messages */
+    .flash { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px;
+             padding: 10px 14px; margin-bottom: 16px; color: #991b1b; }
+
+    /* Disclaimer */
+    .disclaimer { background: #fef9c3; border: 1px solid #fde047; border-radius: 6px;
+                  padding: 10px 14px; margin-bottom: 20px; font-size: 12px; color: #713f12; }
+
+    /* Summary bar */
+    .summary-bar { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;
+                   padding: 14px 20px; margin-bottom: 20px;
+                   display: flex; gap: 32px; align-items: center; }
+    .summary-bar .item { display: flex; flex-direction: column; }
+    .summary-bar .label { font-size: 11px; color: #6b7280; }
+    .summary-bar .value { font-size: 15px; font-weight: 600; }
+    .summary-bar .total .value { font-size: 18px; color: #15803d; }
+    .summary-bar .sep { border-left: 1px solid #86efac; padding-left: 32px; }
+
+    /* Two-column layout */
+    .two-col { display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px;
+               margin-bottom: 20px; }
+    @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* Card */
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+            overflow: hidden; margin-bottom: 10px; }
+    .card-header { background: #f8fafc; padding: 7px 12px; font-size: 11px;
+                   font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;
+                   text-transform: uppercase; letter-spacing: .04em; }
+    .card-header.blue { background: #eff6ff; color: #1e40af;
+                        border-bottom-color: #bfdbfe; text-transform: none;
+                        font-size: 12px; letter-spacing: 0; }
+    .card-header.green { background: #f0fdf4; color: #15803d;
+                         border-bottom-color: #bbf7d0; text-transform: none;
+                         font-size: 12px; letter-spacing: 0; }
+
+    /* Data table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-table td { padding: 5px 12px; border-bottom: 1px solid #f1f5f9; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:nth-child(even) { background: #f8fafc; }
+    .data-table .key { color: #6b7280; width: 55%; }
+    .data-table .val { font-weight: 600; text-align: right; }
+    .data-table .note { color: #6b7280; font-size: 11px; padding: 4px 12px 6px;
+                        border-bottom: none; }
+    .data-table .ok { color: #16a34a; font-weight: 600; }
+
+    /* F1 table */
+    .f1-section { margin-top: 4px; }
+    .f1-section h3 { font-size: 13px; margin-bottom: 8px; color: #1e293b; }
+    .f1-table { width: 100%; border-collapse: collapse; font-size: 12px;
+                background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+                overflow: hidden; }
+    .f1-table th { background: #f8fafc; padding: 7px 12px; text-align: left;
+                   font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;
+                   font-size: 11px; }
+    .f1-table th.num { text-align: right; }
+    .f1-table td { padding: 6px 12px; border-bottom: 1px solid #f1f5f9; }
+    .f1-table tr:last-child td { border-bottom: none; font-weight: 600;
+                                  background: #f8fafc; }
+    .f1-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .f1-table td.neg { color: #dc2626; }
+
+    /* Upload form */
+    .upload-wrap { max-width: 520px; margin: 0 auto; }
+    .steps { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+             overflow: hidden; margin-bottom: 16px; }
+    .steps-header { background: #eff6ff; padding: 8px 14px; font-weight: 600;
+                    font-size: 12px; color: #1e40af; border-bottom: 1px solid #bfdbfe; }
+    .steps-body { padding: 12px 14px; }
+    .step { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+    .step:last-child { margin-bottom: 0; }
+    .step-num { background: #3b82f6; color: #fff; border-radius: 50%;
+                width: 20px; height: 20px; display: flex; align-items: center;
+                justify-content: center; font-size: 10px; font-weight: 700;
+                flex-shrink: 0; margin-top: 1px; }
+    .step-text { font-size: 13px; line-height: 1.5; }
+    .step-warn { display: block; color: #dc2626; font-size: 11px; margin-top: 2px; }
+    .form-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+                padding: 14px; margin-bottom: 14px; }
+    .form-group { margin-bottom: 10px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #374151;
+            margin-bottom: 4px; }
+    input[type=file], select { width: 100%; border: 1px solid #d1d5db; border-radius: 5px;
+                                padding: 6px 10px; font-size: 13px; background: #fff; }
+    .btn { display: block; width: 100%; background: #2563eb; color: #fff;
+           border: none; border-radius: 6px; padding: 10px; font-size: 14px;
+           font-weight: 600; cursor: pointer; text-align: center; }
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+                     text-decoration: none; display: inline-block; border-radius: 6px;
+                     padding: 8px 16px; font-size: 13px; cursor: pointer; }
+    .btn-secondary:hover { background: #e2e8f0; }
+
+    /* Page title */
+    .page-title { text-align: center; margin-bottom: 24px; }
+    .page-title h1 { font-size: 20px; font-weight: 700; }
+    .page-title p { color: #6b7280; font-size: 13px; margin-top: 4px; }
+
+    /* Column headings */
+    .col-heading { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                   letter-spacing: .05em; color: #94a3b8; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for msg in messages %}
+          <div class="flash" role="alert">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

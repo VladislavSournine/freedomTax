@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Personal data & broker files
+config.json
+declar.XML
+cache/
+
+# Dev junk
+.ipynb_checkpoints/
+*.ipynb
+.superpowers/
+f1_table.txt
+instruction.txt
+plan.md
+
+# OS
+.DS_Store

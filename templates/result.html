@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="disclaimer">
+  ⚠️ Цей інструмент надається виключно для довідки.
+  Перевірте розрахунки самостійно або з податковим консультантом перед поданням
+  декларації. Автор не несе відповідальності за помилки.
+</div>
+
+<!-- Summary bar -->
+<div class="summary-bar" data-tax-year="{{ tax_year }}">
+  <div class="item">
+    <span class="label">ПДФО</span>
+    <span class="value">{{ "%.2f"|format(tax_result.pdfo_total) }} грн</span>
+  </div>
+  <div class="item">
+    <span class="label">ВЗ</span>
+    <span class="value">{{ "%.2f"|format(tax_result.vz_total) }} грн</span>
+  </div>
+  <div class="item sep total">
+    <span class="label">До сплати</span>
+    <span class="value">
+      {{ "%.2f"|format(tax_result.pdfo_total + tax_result.vz_total) }} грн
+    </span>
+  </div>
+</div>
+
+<div class="two-col">
+
+  <!-- LEFT: Calculation breakdown -->
+  <div>
+    <div class="col-heading">Розрахунок</div>
+
+    <!-- Dividends -->
+    <div class="card">
+      <div class="card-header">Дивіденди</div>
+      <table class="data-table">
+        <tr>
+          <td class="key">Сума доходу</td>
+          <td class="val">{{ "%.2f"|format(tax_result.dividend_income_uah) }} грн</td>
+        </tr>
+        <tr>
+          <td class="key">ПДФО{% if tax_result.wht_credit_uah > 0 %} (9% ефективна){% else %} (18%){% endif %}</td>
+          <td class="val">{{ "%.2f"|format(tax_result.pdfo_dividends) }} грн</td>
+        </tr>
+        <tr>
+          <td class="key">ВЗ</td>
+          <td class="val">{{ "%.2f"|format(tax_result.vz_dividends) }} грн</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Cashback -->
+    <div class="card">
+      <div class="card-header">Cashback (scores_rebate)</div>
+      <table class="data-table">
+        <tr>
+          <td class="key">Сума доходу</td>
+          <td class="val">{{ "%.2f"|format(tax_result.other_income_uah) }} грн</td>
+        </tr>
+        <tr>
+          <td class="key">ПДФО (18%)</td>
+          <td class="val">{{ "%.2f"|format(tax_result.pdfo_other) }} грн</td>
+        </tr>
+        <tr>
+          <td class="key">ВЗ</td>
+          <td class="val">{{ "%.2f"|format(tax_result.vz_other) }} грн</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Trades -->
+    <div class="card">
+      <div class="card-header">Торгівля ЦП</div>
+      <table class="data-table">
+        <tr>
+          <td class="key">Закритих позицій</td>
+          <td class="val">{{ f1_groups | length }}</td>
+        </tr>
+        {% if has_trades %}
+        <tr>
+          <td class="key">Чистий прибуток (база)</td>
+          <td class="val">{{ "%.2f"|format(tax_result.net_profit_uah) }} грн</td>
+        </tr>
+        <tr>
+          <td class="key">ПДФО (18%)</td>
+          <td class="val">{{ "%.2f"|format(tax_result.pdfo_trades) }} грн</td>
+        </tr>
+        <tr>
+          <td class="key">ВЗ</td>
+          <td class="val">{{ "%.2f"|format(tax_result.vz_trades) }} грн</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td class="key">Додаток Ф1</td>
+          <td class="val ok">не потрібен</td>
+        </tr>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT: Form-filling instruction -->
+  <div>
+    <div class="col-heading">Що вписати в декларацію</div>
+
+    <!-- Step 1: Row 10.10 -->
+    {% set foreign_total = tax_result.dividend_income_uah + tax_result.other_income_uah %}
+    <div class="card">
+      <div class="card-header blue">Крок 1 — Розділ II, рядок 10.10</div>
+      <table class="data-table">
+        <tr>
+          <td class="key">r01010g2s&nbsp;країна/валюта</td>
+          <td class="val">США, долар США (USD)</td>
+        </tr>
+        <tr>
+          <td class="key">r01010g3&nbsp;сума доходу</td>
+          <td class="val">{{ "%.2f"|format(foreign_total) }}</td>
+        </tr>
+        <tr>
+          <td class="key">r01010g6&nbsp;ПДФО</td>
+          <td class="val">{{ "%.2f"|format(tax_result.pdfo_dividends + tax_result.pdfo_other) }}</td>
+        </tr>
+        <tr>
+          <td class="key">r01010g7&nbsp;ВЗ</td>
+          <td class="val">{{ "%.2f"|format(tax_result.vz_dividends + tax_result.vz_other) }}</td>
+        </tr>
+        <tr>
+          <td class="note" colspan="2">
+            ↳ для довідки: дивіденди {{ "%.2f"|format(tax_result.dividend_income_uah) }}
+            + cashback {{ "%.2f"|format(tax_result.other_income_uah) }}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Step 2: Row 10.8 -->
+    <div class="card">
+      <div class="card-header blue">Крок 2 — Рядок 10.8 (інвестиційний прибуток)</div>
+      {% if tax_result.net_profit_uah > 0 %}
+      <table class="data-table">
+        <tr>
+          <td class="key">r0108g3&nbsp;сума прибутку</td>
+          <td class="val">{{ "%.2f"|format(tax_result.net_profit_uah) }}</td>
+        </tr>
+        <tr>
+          <td class="key">r0108g6&nbsp;ПДФО</td>
+          <td class="val">{{ "%.2f"|format(tax_result.pdfo_trades) }}</td>
+        </tr>
+        <tr>
+          <td class="key">r0108g7&nbsp;ВЗ</td>
+          <td class="val">{{ "%.2f"|format(tax_result.vz_trades) }}</td>
+        </tr>
+        <tr>
+          <td class="note" colspan="2">Заповнюється автоматично з Додатку Ф1</td>
+        </tr>
+      </table>
+      {% elif has_trades %}
+      <table class="data-table">
+        <tr>
+          <td class="key">Результат</td>
+          <td class="val ok">Збиток — рядок 10.8 = 0</td>
+        </tr>
+        <tr>
+          <td class="note" colspan="2">Ф1 все одно заповнюється (для фіксації збитку)</td>
+        </tr>
+      </table>
+      {% else %}
+      <table class="data-table">
+        <tr>
+          <td class="key ok" colspan="2">✓ Рядок 10.8 — не заповнюється</td>
+        </tr>
+      </table>
+      {% endif %}
+    </div>
+
+    <!-- Step 3: F1 -->
+    <div class="card">
+      <div class="card-header {% if has_trades %}blue{% else %}green{% endif %}">
+        Крок 3 — Додаток Ф1
+      </div>
+      {% if has_trades %}
+      <table class="data-table">
+        <tr>
+          <td class="key">t1rxxxxg2</td>
+          <td class="val" style="font-size:11px">Інвестиційні активи з джерел за межами України</td>
+        </tr>
+        <tr>
+          <td class="key">t1rxxxxg3s</td>
+          <td class="val">назва тікера (BAC.US, JNJ.US…)</td>
+        </tr>
+        <tr>
+          <td class="key">t1rxxxxg4</td>
+          <td class="val">сума доходу від продажу (грн)</td>
+        </tr>
+        <tr>
+          <td class="key">t1rxxxxg5</td>
+          <td class="val">витрати + комісії (грн)</td>
+        </tr>
+        <tr>
+          <td class="key">t1rxxxxg6</td>
+          <td class="val">фін. результат (від'ємне зі знаком −)</td>
+        </tr>
+        <tr>
+          <td class="note" colspan="2">Дивись таблицю нижче ↓</td>
+        </tr>
+      </table>
+      {% else %}
+      <table class="data-table">
+        <tr>
+          <td class="ok" colspan="2" style="padding:8px 12px">
+            ✓ Ф1 не подається — продажів не було
+          </td>
+        </tr>
+      </table>
+      {% endif %}
+    </div>
+
+  </div><!-- /right col -->
+</div><!-- /two-col -->
+
+<!-- F1 detail table (only if there were trades) -->
+{% if has_trades %}
+<div class="f1-section">
+  <h3>Таблиця для Додатку Ф1 — {{ tax_year }} рік</h3>
+  <table class="f1-table">
+    <thead>
+      <tr>
+        <th style="width:32px">#</th>
+        <th>Найменування (t1rxxxxg3s)</th>
+        <th class="num">Дохід г4 (грн)</th>
+        <th class="num">Витрати г5 (грн)</th>
+        <th class="num">Результат г6 (грн)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for i, g in f1_groups | enumerate(start=1) %}
+      <tr>
+        <td>{{ i }}</td>
+        <td>{{ g.ticker }}</td>
+        <td class="num">{{ "%.2f"|format(g.proceeds_uah) }}</td>
+        <td class="num">{{ "%.2f"|format(g.expenses_uah) }}</td>
+        <td class="num {% if g.profit_uah < 0 %}neg{% endif %}">
+          {{ "%.2f"|format(g.profit_uah) }}
+        </td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td></td>
+        <td>УСЬОГО</td>
+        <td class="num">{{ "%.2f"|format(f1_groups | sum(attribute='proceeds_uah')) }}</td>
+        <td class="num">{{ "%.2f"|format(f1_groups | sum(attribute='expenses_uah')) }}</td>
+        <td class="num">{{ "%.2f"|format(f1_groups | sum(attribute='profit_uah')) }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="font-size:11px;color:#6b7280;margin-top:6px">
+    Від'ємний фінансовий результат вводиться зі знаком "−" у cabinet.tax.gov.ua
+  </p>
+</div>
+{% endif %}
+
+<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0">
+  <a href="/" class="btn-secondary">← Розрахувати інший файл</a>
+</div>
+
+{% endblock %}

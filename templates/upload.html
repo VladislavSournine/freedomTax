@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="upload-wrap">
+  <div class="page-title">
+    <h1>🇺🇦 Калькулятор податків Freedom24</h1>
+    <p>Розрахунок ПДФО та ВЗ для декларації про майновий стан і доходи</p>
+  </div>
+
+  <div class="steps">
+    <div class="steps-header">Як отримати звіт у Freedom24</div>
+    <div class="steps-body">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Відкрий <strong>freedom24.com</strong> → увійди в особистий кабінет</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Перейди в <strong>Мій рахунок → Звіти → Загальний звіт</strong></div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          Формат: <strong>JSON</strong>&nbsp;&nbsp;·&nbsp;&nbsp;
+          Період: <strong>від дати відкриття рахунку</strong> до <strong>31 грудня</strong> звітного року
+          <span class="step-warn">⚠️ Важливо: повна історія потрібна для правильного FIFO-розрахунку.
+            Якщо взяти тільки поточний рік — купівлі попередніх років не потраплять до розрахунку.</span>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text">Завантаж отриманий файл нижче та вкажи звітний рік</div>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('calculate') }}" enctype="multipart/form-data">
+    <div class="form-box">
+      <div class="form-group">
+        <label for="file">Файл звіту (JSON)</label>
+        <input type="file" id="file" name="file" accept=".json" required>
+      </div>
+      <div class="form-group">
+        <label for="tax_year">Звітний рік</label>
+        <select id="tax_year" name="tax_year">
+          {% for year in years %}
+            <option value="{{ year }}"
+              {% if year == default_year %}selected{% endif %}>{{ year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn">Розрахувати →</button>
+  </form>
+</div>
+{% endblock %}
