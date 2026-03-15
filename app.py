@@ -71,6 +71,9 @@ def calculate():
     except requests.RequestException:
         flash("Не вдалося отримати курси НБУ. Перевірте інтернет-з'єднання")
         return redirect(url_for("upload"))
+    except RuntimeError as e:
+        flash(f"Помилка курсів НБУ: {e}")
+        return redirect(url_for("upload"))
 
     # --- filter by tax year ---
     dividends_year = [d for d in dividends if d["date"][:4] == str(tax_year)]

@@ -16,6 +16,7 @@ cache/
 *.ipynb
 .superpowers*/
 CLAUDE*
+docs/
 f1_table.txt
 instruction.txt
 plan.md
