@@ -15,11 +15,14 @@ cache/
 .ipynb_checkpoints/
 *.ipynb
 .superpowers*/
+.claude/
+.remember/
 CLAUDE*
 docs/
 f1_table.txt
 instruction.txt
 plan.md
+TODO.md
 
 # OS
 .DS_Store

@@ -1,5 +1,5 @@
 import pytest
-from src.tax import calculate_taxes, VZ_RATE_CHANGE_DATE
+from src.tax import aggregate_drfo_oznakas, calculate_taxes, VZ_RATE_CHANGE_DATE
 
 
 def test_vz_rate_before_cutoff():
@@ -87,3 +87,33 @@ def test_dividends_taxed_separately():
     assert abs(result["dividend_income_uah"] - 500.0) < 0.01
     assert abs(result["pdfo_dividends"] - 90.0) < 0.01   # 500 * 18%
     assert abs(result["vz_dividends"] - 7.5) < 0.01      # 500 * 1.5% (year rate 2024)
+
+
+def test_drfo_aggregates_empty():
+    result = aggregate_drfo_oznakas()
+    assert result["row_10_13_income"] == 0.0
+    assert result["row_11_3_income"] == 0.0
+    assert result["has_drfo"] is False
+
+
+def test_drfo_aggregates_real_numbers():
+    # Fixture mirrors Vlad's F1419104 for 2025.
+    result = aggregate_drfo_oznakas(
+        oznaka_126_income=1409.52, oznaka_126_pdfo_withheld=253.72, oznaka_126_vz_withheld=70.49,
+        oznaka_127_income=4348.40, oznaka_127_pdfo_withheld=782.71, oznaka_127_vz_withheld=217.42,
+        oznaka_125_income=13166.25,
+        oznaka_160_income=5133.50,
+    )
+    assert abs(result["row_10_13_income"] - 5757.92) < 0.01      # 1409.52 + 4348.40
+    assert abs(result["row_10_13_pdfo_withheld"] - 1036.43) < 0.01
+    assert abs(result["row_10_13_vz_withheld"] - 287.91) < 0.01
+    assert abs(result["row_11_3_income"] - 18299.75) < 0.01      # 13166.25 + 5133.50
+    assert result["has_drfo"] is True
+
+
+def test_drfo_aggregates_only_non_taxable():
+    # Only ознака 125 → row 11.3 populated, row 10.13 empty but has_drfo=True.
+    result = aggregate_drfo_oznakas(oznaka_125_income=500.0)
+    assert result["row_10_13_income"] == 0.0
+    assert result["row_11_3_income"] == 500.0
+    assert result["has_drfo"] is True

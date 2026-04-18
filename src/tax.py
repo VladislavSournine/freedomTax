@@ -26,6 +26,38 @@ def vz_rate_for_year(tax_year: int) -> float:
     return VZ_RATE_NEW if tax_year >= VZ_FIRST_YEAR_NEW_RATE else VZ_RATE_OLD
 
 
+def aggregate_drfo_oznakas(
+    oznaka_126_income: float = 0.0,
+    oznaka_126_pdfo_withheld: float = 0.0,
+    oznaka_126_vz_withheld: float = 0.0,
+    oznaka_127_income: float = 0.0,
+    oznaka_127_pdfo_withheld: float = 0.0,
+    oznaka_127_vz_withheld: float = 0.0,
+    oznaka_125_income: float = 0.0,
+    oznaka_160_income: float = 0.0,
+) -> dict:
+    """Aggregate F1419104 (довідка з ДРФО) sums into declaration rows 10.13 and 11.3.
+
+    Row 10.13 = oznaka 126 (додаткове благо) + 127 (інші доходи). Typically the
+    paying agent (bank, employer) has already withheld PDFO/VZ — taxpayer only
+    mirrors the amounts in columns 4/5 of the declaration.
+
+    Row 11.3 = oznaka 125 (пенсійні внески за працівника) + 160 (дарунки в
+    межах мін. зар. плати). Both are non-taxable per ПКУ — income only, no tax.
+    """
+    row_10_13_income = oznaka_126_income + oznaka_127_income
+    row_10_13_pdfo = oznaka_126_pdfo_withheld + oznaka_127_pdfo_withheld
+    row_10_13_vz = oznaka_126_vz_withheld + oznaka_127_vz_withheld
+    row_11_3_income = oznaka_125_income + oznaka_160_income
+    return {
+        "row_10_13_income": round(row_10_13_income, 2),
+        "row_10_13_pdfo_withheld": round(row_10_13_pdfo, 2),
+        "row_10_13_vz_withheld": round(row_10_13_vz, 2),
+        "row_11_3_income": round(row_11_3_income, 2),
+        "has_drfo": row_10_13_income > 0 or row_11_3_income > 0,
+    }
+
+
 def calculate_taxes(
     positions: list,
     dividends: list,

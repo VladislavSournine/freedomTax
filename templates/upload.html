@@ -7,6 +7,30 @@
   </div>
 
   <div class="steps">
+    <div class="steps-header">⚠️ ОБОВ'ЯЗКОВО перед формуванням звіту</div>
+    <div class="steps-body">
+      <div class="step">
+        <div class="step-num">!</div>
+        <div class="step-text">
+          <strong>Спочатку замов довідку F1419104</strong> у
+          <strong>cabinet.tax.gov.ua</strong> → "Введення звітності" → подай
+          запит формою <strong>F1401803</strong> (період = звітний рік,
+          тип = для декларування, КЕП). Протягом доби у "Вхідних документах"
+          прийде довідка <strong>F1419104</strong> — там усі доходи за рік з
+          кодами ознак (101, 125, 126, 127, 160…) по кожному агенту.
+          <br><br>
+          <strong>Без F1419104 не формуй звіт.</strong> Агенти бачать лише свої
+          виплати — сам ти не знатимеш про рядки <strong>10.13 / 11.3</strong>
+          і отримаєш камералку від ДПС. Цей калькулятор рахує
+          <strong>рядок 10.10 (Freedom24)</strong>, а з цифрами з F1419104
+          нижче — ще й <strong>10.13 / 11.3</strong>.
+          <br><small>Детальний порядок — у README, розділ «Повний флоу декларування».</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="steps">
     <div class="steps-header">Як отримати звіт у Freedom24</div>
     <div class="steps-body">
       <div class="step">
@@ -33,7 +57,53 @@
     </div>
   </div>
 
-  <form method="POST" action="{{ url_for('calculate') }}" enctype="multipart/form-data">
+  <div class="steps">
+    <div class="steps-header">📬 Якщо від ДПС прийшов лист — читай це першим</div>
+    <div class="steps-body">
+      <div class="step">
+        <div class="step-num">A</div>
+        <div class="step-text">
+          <strong>Листів немає</strong> — просто завантаж нижче файл звіту,
+          перевір цифри, і подай декларацію в ЕК:
+          <code>cabinet.tax.gov.ua</code> → «Введення звітності» → <strong>F0100215</strong>
+          (декларація про майновий стан і доходи за звітний рік).
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">B</div>
+        <div class="step-text">
+          <strong>Прийшов лист №1 (камералка — про рядки 10.13 / 11.3)</strong> —
+          ДПС побачила в F1419104 те, чого нема в твоїй декларації. Порядок дій:
+          <br>1) у цьому калькуляторі введи цифри з F1419104 (або завантаж XML)
+             і сформуй звіт. 2) у ЕК «Введення звітності» подай
+             <strong>«Звітну нову»</strong> декларацію (той самий F0100215, але з
+             типом «Звітна нова»), доповнену рядками 10.13 і 11.3.
+             3) запам'ятай реєстраційний № і дату — вони підуть у п.4 супровідного листа.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">C</div>
+        <div class="step-text">
+          <strong>Прийшов лист №2 (запит документів — про рядок 10.10)</strong> —
+          ДПС хоче побачити, звідки взялась сума. Порядок дій:
+          <br>1) в формі «Супровідний лист на запит ДПС» нижче встав текст цього
+             листа (Ctrl+A у PDF → Ctrl+V). 2) сформуй звіт — на сторінці результату
+             готовий лист-відповідь. 3) надішли його у ЕК → «Листування з ДПС»
+             з доданими файлами (звіт Freedom24 у JSON+PDF і цей лист).
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">D</div>
+        <div class="step-text">
+          <strong>Прийшли обидва листи</strong> — спочатку Звітну нову (як у B),
+          потім відповідь на запит (як у C, причому у п.4 буде автоматично
+          вказано № і дату Звітної нової, якщо ти їх вкажеш у формі нижче).
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form id="uploadForm" method="POST" action="{{ url_for('calculate') }}" enctype="multipart/form-data">
     <div class="form-box">
       <div class="form-group">
         <label for="file">Файл звіту (JSON)</label>
@@ -49,7 +119,232 @@
         </select>
       </div>
     </div>
-    <button type="submit" class="btn">Розрахувати →</button>
+
+    <div class="form-box" style="margin-top:12px">
+      <div class="form-group">
+        <label for="drfo_xml">Довідка F1419104 — XML з ЕК (опційно, але рекомендовано)</label>
+        <input type="file" id="drfo_xml" name="drfo_xml" accept=".xml,.XML">
+        <p class="hint" style="margin:6px 0 0">
+          У ЕК при отриманні довідки натисни "Завантажити XML". Тоді рядки
+          10.13 / 11.3 заповняться автоматично. Якщо XML нема — введи цифри
+          вручну нижче.
+        </p>
+      </div>
+
+      <details style="margin-top:8px">
+        <summary style="cursor:pointer;font-weight:600;padding:4px 0">
+          Або ввести цифри з F1419104 вручну
+        </summary>
+        <p class="hint" style="margin:8px 0 12px">
+          Підсумуй у довідці F1419104 дохід і утримані податки за кожним кодом
+          ознаки і введи нижче. Залиш 0 якщо такого доходу не було.
+          <strong>Ігнорується, якщо вище завантажено XML.</strong>
+        </p>
+
+        <div class="form-group">
+          <label>Ознака 126 — Додаткове благо (як правило, %-и по депозитах)</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <input type="text" name="oznaka_126_income" placeholder="Сума доходу, грн" inputmode="decimal">
+            <input type="text" name="oznaka_126_pdfo" placeholder="ПДФО утримано" inputmode="decimal">
+            <input type="text" name="oznaka_126_vz" placeholder="ВЗ утримано" inputmode="decimal">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Ознака 127 — Інші доходи</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <input type="text" name="oznaka_127_income" placeholder="Сума доходу, грн" inputmode="decimal">
+            <input type="text" name="oznaka_127_pdfo" placeholder="ПДФО утримано" inputmode="decimal">
+            <input type="text" name="oznaka_127_vz" placeholder="ВЗ утримано" inputmode="decimal">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Ознака 125 — Пенсійні внески за працівника (неоподатковуваний)</label>
+          <input type="text" name="oznaka_125_income" placeholder="Сума, грн" inputmode="decimal">
+        </div>
+
+        <div class="form-group">
+          <label>Ознака 160 — Дарунки в межах мін. зп (неоподатковуваний)</label>
+          <input type="text" name="oznaka_160_income" placeholder="Сума, грн" inputmode="decimal">
+        </div>
+      </details>
+    </div>
+
+    <div class="form-box" style="margin-top:12px">
+      <details>
+        <summary style="cursor:pointer;font-weight:600;padding:4px 0">
+          Супровідний лист на запит ДПС (опційно — заповнить лист за тебе)
+        </summary>
+        <p class="hint" style="margin:8px 0 12px">
+          Якщо ДПС надіслала лист-запит до рядка 10.10 — відкрий PDF, натисни
+          <strong>Ctrl+A → Ctrl+C</strong> і встав текст нижче. Парсер витягне
+          номер/дату листа, номер/дату декларації, адресу, ПІБ і підставить у
+          супровідний лист на сторінці результату.
+        </p>
+
+        <div class="form-group">
+          <label for="dps_letter_text">
+            Лист №2 — про вимогу додаткових документів (до ряд. 10.10)
+          </label>
+          <textarea id="dps_letter_text" name="dps_letter_text" rows="6"
+                    style="width:100%;border:1px solid #d1d5db;border-radius:5px;
+                           padding:8px 10px;font-size:12px;font-family:inherit;
+                           resize:vertical"
+                    placeholder="ДЕРЖАВНА ПОДАТКОВА СЛУЖБА УКРАЇНИ... (Ctrl+A в PDF → Ctrl+V сюди)"></textarea>
+          <p class="hint" style="margin:4px 0 0">
+            Той самий, де «Про надання документів щодо декларації». Йде в шапку
+            супровідного листа (вих. №, дата, ПІБ, РНОКПП, адреса).
+          </p>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:8px">
+            <input type="text" name="letter_vykh_manual"
+                   style="border:1px solid #d1d5db;border-radius:5px;
+                          padding:6px 10px;font-size:13px"
+                   placeholder="вих. № вручну (напр. 19956/Ж12/26-15-24-01-02-12)">
+            <input type="text" name="letter_date_manual"
+                   style="border:1px solid #d1d5db;border-radius:5px;
+                          padding:6px 10px;font-size:13px"
+                   placeholder="дата DD.MM.YYYY">
+          </div>
+          <p class="hint" style="margin:4px 0 0">
+            ⚠ Якщо у номері є кирилиця (Ж, ї, і) — Ctrl+C з PDF часто ламає
+            ці літери (напр. «19956/<b>Ж12</b>/…» → «199567<b>12</b>…»).
+            Візьми номер з «Вхідні документи» в кабінеті
+            (<code>Документу присвоєно реєстраційний індекс …</code>) —
+            там він plain text — і встав у поле вище. Порожньо → беремо
+            з тексту листа.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="letter1_text">
+            Лист №1 — про помилки в декларації / камералка (до ряд. 10.13 / 11.3)
+          </label>
+          <textarea id="letter1_text" name="letter1_text" rows="4"
+                    style="width:100%;border:1px solid #d1d5db;border-radius:5px;
+                           padding:8px 10px;font-size:12px;font-family:inherit;
+                           resize:vertical"
+                    placeholder="ДЕРЖАВНА ПОДАТКОВА СЛУЖБА УКРАЇНИ... (другий лист)"></textarea>
+          <p class="hint" style="margin:4px 0 0">
+            Той, де «пропонується подати Звітну нову за 2025» — з нього парсер
+            візьме лише вих. № і дату для пункту 4 супровідного листа.
+          </p>
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:8px">
+            <input type="text" name="letter1_vykh_manual"
+                   style="border:1px solid #d1d5db;border-radius:5px;
+                          padding:6px 10px;font-size:13px"
+                   placeholder="вих. № вручну (якщо кирилиця поламалась)">
+            <input type="text" name="letter1_date_manual"
+                   style="border:1px solid #d1d5db;border-radius:5px;
+                          padding:6px 10px;font-size:13px"
+                   placeholder="дата DD.MM.YYYY">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="contact_email">Твій email (для листа)</label>
+          <input type="text" id="contact_email" name="contact_email"
+                 style="width:100%;border:1px solid #d1d5db;border-radius:5px;
+                        padding:6px 10px;font-size:13px"
+                 placeholder="example@gmail.com" inputmode="email">
+        </div>
+
+        <div class="form-group">
+          <label for="contact_phone">Твій телефон (для листа)</label>
+          <input type="text" id="contact_phone" name="contact_phone"
+                 style="width:100%;border:1px solid #d1d5db;border-radius:5px;
+                        padding:6px 10px;font-size:13px"
+                 placeholder="+380..." inputmode="tel">
+        </div>
+
+        <div class="form-group">
+          <label>"Звітна нова" — якщо вже подав (пункт 4 листа)</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <input type="text" name="zvit_nova_num"
+                   style="border:1px solid #d1d5db;border-radius:5px;
+                          padding:6px 10px;font-size:13px"
+                   placeholder="реєстр. №">
+            <input type="text" name="zvit_nova_date"
+                   style="border:1px solid #d1d5db;border-radius:5px;
+                          padding:6px 10px;font-size:13px"
+                   placeholder="дата DD.MM.YYYY">
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin-top:6px">
+      <button type="submit" class="btn" style="flex:0 0 auto">Розрахувати →</button>
+      <button type="button" id="clearSavedBtn"
+              style="background:#fff;border:1px solid #d1d5db;border-radius:6px;
+                     padding:8px 14px;font-size:13px;color:#475569;cursor:pointer">
+        Очистити збережене
+      </button>
+      <span id="savedIndicator" style="font-size:12px;color:#94a3b8"></span>
+    </div>
   </form>
 </div>
+
+<script>
+/*
+ * Autosave: persist all text/select inputs (NOT files — browser security
+ * forbids programmatic File values) to localStorage on every edit and
+ * restore on page load. Scoped to a versioned key so a field-rename in the
+ * future can invalidate old saves by bumping the version.
+ */
+(function () {
+  const KEY = "taxCalc_form_v1";
+  const form = document.getElementById("uploadForm");
+  const indicator = document.getElementById("savedIndicator");
+  if (!form) return;
+
+  // Elements we persist: named inputs/selects/textareas, except file inputs.
+  const persistable = () => Array.from(
+    form.querySelectorAll("input[name], textarea[name], select[name]")
+  ).filter(el => el.type !== "file");
+
+  function load() {
+    let raw;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return; }
+    if (!raw) return;
+    let data;
+    try { data = JSON.parse(raw); } catch (e) { return; }
+    for (const el of persistable()) {
+      if (data[el.name] !== undefined) el.value = data[el.name];
+    }
+    // If there are collapsed <details> with saved data inside, open them so
+    // the user sees what's preloaded.
+    for (const d of form.querySelectorAll("details")) {
+      const inner = Array.from(
+        d.querySelectorAll("input[name], textarea[name], select[name]")
+      ).filter(el => el.type !== "file");
+      if (inner.some(el => el.value && el.value.trim() !== "")) {
+        d.open = true;
+      }
+    }
+    if (indicator) indicator.textContent = "(відновлено зі збереження)";
+  }
+
+  function save() {
+    const data = {};
+    for (const el of persistable()) data[el.name] = el.value;
+    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { return; }
+    if (indicator) indicator.textContent = "💾 збережено локально";
+  }
+
+  load();
+  form.addEventListener("input", save);
+  form.addEventListener("change", save);
+
+  const clearBtn = document.getElementById("clearSavedBtn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      if (!confirm("Очистити всі збережені значення у цій формі?")) return;
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      for (const el of persistable()) el.value = "";
+      if (indicator) indicator.textContent = "очищено";
+    });
+  }
+})();
+</script>
 {% endblock %}
