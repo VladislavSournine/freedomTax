@@ -134,6 +134,53 @@
       </table>
     </div>
 
+    {% if drfo and drfo.has_drfo %}
+    <!-- Step 1b: Row 10.13 (з довідки F1419104) -->
+    {% if drfo.row_10_13_income > 0 %}
+    <div class="card">
+      <div class="card-header blue">Крок 1b — Рядок 10.13 (інші доходи — з F1419104)</div>
+      <table class="data-table">
+        <tr>
+          <td class="key">r01013g3&nbsp;сума доходу</td>
+          <td class="val">{{ "%.2f"|format(drfo.row_10_13_income) }}</td>
+        </tr>
+        <tr>
+          <td class="key">r01013g4&nbsp;ПДФО (утримано агентом)</td>
+          <td class="val">{{ "%.2f"|format(drfo.row_10_13_pdfo_withheld) }}</td>
+        </tr>
+        <tr>
+          <td class="key">r01013g5&nbsp;ВЗ (утримано агентом)</td>
+          <td class="val">{{ "%.2f"|format(drfo.row_10_13_vz_withheld) }}</td>
+        </tr>
+        <tr>
+          <td class="note" colspan="2">
+            Сума ознак 126 + 127. Податки вже утримані агентом —
+            у кол. 6/7 (самостійно) нічого не вписуй.
+          </td>
+        </tr>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Step 1c: Row 11.3 (з довідки F1419104) -->
+    {% if drfo.row_11_3_income > 0 %}
+    <div class="card">
+      <div class="card-header green">Крок 1c — Рядок 11.3 (неоподатковувані — з F1419104)</div>
+      <table class="data-table">
+        <tr>
+          <td class="key">r01103g3&nbsp;сума доходу</td>
+          <td class="val">{{ "%.2f"|format(drfo.row_11_3_income) }}</td>
+        </tr>
+        <tr>
+          <td class="note" colspan="2">
+            Сума ознак 125 + 160. Не оподатковується — ПДФО/ВЗ = 0.
+          </td>
+        </tr>
+      </table>
+    </div>
+    {% endif %}
+    {% endif %}
+
     <!-- Step 2: Row 10.8 -->
     <div class="card">
       <div class="card-header blue">Крок 2 — Рядок 10.8 (інвестиційний прибуток)</div>
@@ -216,6 +263,45 @@
       {% endif %}
     </div>
 
+    <!-- Step 4: row 10 self-calculated tax sum (cross-check trips ЕК validator) -->
+    {% set self_pdfo = tax_result.pdfo_dividends + tax_result.pdfo_other + tax_result.pdfo_trades %}
+    {% set self_vz = tax_result.vz_dividends + tax_result.vz_other + tax_result.vz_trades %}
+    <div class="card">
+      <div class="card-header blue">
+        Крок 4 — Рядок 10, графи 6 і 7 (підсумок «сам нарахував»)
+      </div>
+      <table class="data-table">
+        <tr>
+          <td class="key">Ряд. 10, гр. 6 — ПДФО (сам нарахував)
+            <small style="color:#94a3b8">&nbsp;тег <code>R010G6</code></small></td>
+          <td class="val">{{ "%.2f"|format(self_pdfo) }}</td>
+        </tr>
+        <tr>
+          <td class="key">Ряд. 10, гр. 7 — ВЗ (сам нарахував)
+            <small style="color:#94a3b8">&nbsp;тег <code>R010G7</code></small></td>
+          <td class="val">{{ "%.2f"|format(self_vz) }}</td>
+        </tr>
+        <tr>
+          <td class="note" colspan="2">
+            <strong>Важливо:</strong> «гр. 6 / гр. 7» — це <em>колонки</em>
+            рядка 10 (ПДФО / ВЗ), а НЕ підрядки 10.6 / 10.7 (ряд. 10.6 —
+            лізинг/оренда, нас тут не стосується).
+            <br>⚠️ ЕК <strong>не авто-сумує</strong>: вписуй цифри і в
+            гр.&nbsp;6/7 підсумку ряд.&nbsp;10 (<code>R010G6</code> /
+            <code>R010G7</code>), і в гр.&nbsp;6/7 підрядка 10.10
+            (<code>R01010G6</code> / <code>R01010G7</code>)
+            {%- if has_trades %}, і в 10.8 (<code>R0108G6</code> /
+            <code>R0108G7</code>){% endif %} — інакше валідатор кричить
+            <code>^R010G6[0] = сумі рядків 10.1 – 10.15 гр. 6</code>.
+            <br>У підрядку 10.3 (зарплата) і 10.13 (інше з F1419104) гр. 6/7
+            завжди&nbsp;= 0 — там податок утримав агент (у гр. 4/5). А ряд. 10
+            гр. 3/4/5 — додай суму ВСІХ підрядків 10.X сам, включно зі своєю
+            зарплатою з 10.3, яку цей калькулятор не бачить.
+          </td>
+        </tr>
+      </table>
+    </div>
+
   </div><!-- /right col -->
 </div><!-- /two-col -->
 
@@ -259,6 +345,314 @@
   </p>
 </div>
 {% endif %}
+
+{% set next_year = tax_year + 1 %}
+
+<!-- How to file the declaration in ЕК -->
+<div class="send-card" style="margin-top:18px">
+  <h4>📝 Як подати декларацію в ЕК</h4>
+  <div class="path">
+    <div class="path-title">Перший раз цього року — тип «Звітна»</div>
+    <div class="path-body">
+      <code>cabinet.tax.gov.ua</code> → «Введення звітності» → знайди форму
+      «Декларація про майновий стан і доходи» (код в ЕК — <code>F0100215</code>),
+      період — <strong>{{ tax_year }}</strong>, тип — <strong>«Звітна»</strong>.
+      Заповнюй рядки з колонки «Що вписати в декларацію» вище. Якщо є продажі
+      ЦП — додатком іде <strong>Ф1</strong> (окрема секція цієї ж форми) з
+      таблиці нижче. Підпиши КЕП → «Подати». Протягом доби в «Вхідних
+      документах» прийдуть Квитанція №1 (отримано) і №2 (прийнято) —
+      реєстраційний № з №2 і є номер твоєї декларації.
+      <br><strong>Дедлайн:</strong> до 01.05.{{ next_year }}
+      (ст. 49.18.4 ПКУ).
+    </div>
+  </div>
+  <div class="path">
+    <div class="path-title">Виправлення до 01.05.{{ next_year }} — тип «Звітна нова»</div>
+    <div class="path-body">
+      Якщо вже подав «Звітну», але треба виправити (типово — прийшов лист №1
+      про рядки 10.13 / 11.3, бо забув ознаки 126 / 127 з F1419104) — створи
+      нову декларацію тим самим <code>F0100215</code>, тип —
+      <strong>«Звітна нова»</strong>. Вона <strong>повністю замінює</strong>
+      попередню (заповнюєш ВСІ рядки заново — і старі, і нові 10.13 / 11.3).
+      Без штрафу, бо до дедлайну. Реєстраційний № і дату з Квитанції №2
+      по цій Звітній новій впиши у форму під супровідним листом нижче —
+      вони з'являться в п. 4 листа.
+    </div>
+  </div>
+  <div class="path">
+    <div class="path-title">Виправлення після 01.05.{{ next_year }} — тип «Уточнююча»</div>
+    <div class="path-body">
+      Той самий <code>F0100215</code>, тип — <strong>«Уточнююча»</strong>.
+      Якщо виправлення <strong>збільшує</strong> зобов'язання — заплати 3%
+      самоштраф від суми збільшення (п. 50.1 ПКУ) <strong>до</strong> подачі
+      уточнюючої. Без самоштрафу ризикуєш отримати штраф 25% (а при повторі —
+      50%). Якщо зобов'язання не зростає (або зменшується) — просто подаєш
+      без штрафу.
+    </div>
+  </div>
+</div>
+
+<!-- XML patcher: inject row 10.10 (and optionally 10.8 / 10.13 / 11.3) into user's draft -->
+{% set foreign_income_total = tax_result.dividend_income_uah + tax_result.other_income_uah %}
+{% set foreign_pdfo_total = tax_result.pdfo_dividends + tax_result.pdfo_other %}
+{% set foreign_vz_total = tax_result.vz_dividends + tax_result.vz_other %}
+<div class="send-card" style="margin-top:18px">
+  <h4>🛠 Патч чернетки XML — автоматично додати потрібні рядки</h4>
+  <div class="path">
+    <div class="path-body">
+      Коли ЕК каже <code>^R010G6[0] = сумі рядків 10.1 – 10.15 гр.6</code> —
+      це тому, що ти вписав підсумок у <strong>R010</strong>, але не додав
+      сам підрядок <strong>R01010</strong>{%- if has_trades %} / <strong>R0108</strong>{%- endif -%}
+      (ЕК не підсумовує автоматично). Зроби так:
+      <br>1) у ЕК натисни <strong>«Зберегти як чернетку»</strong> → «Завантажити XML»;
+      <br>2) завантаж цю чернетку нижче — модуль допише потрібні рядки і
+      перерахує <code>R010</code>, <code>R011</code>, <code>R012</code>,
+      <code>R013</code>, <code>R0201</code>, <code>R0211</code>;
+      <br>3) у ЕК відкрий ту саму декларацію → <strong>«Завантажити XML»</strong>
+      (імпорт) → вибери скачаний <code>F0100215_patched.xml</code> → перевір
+      цифри → підпиши КЕП → «Подати».
+    </div>
+  </div>
+  <form method="POST" action="{{ url_for('patch_xml') }}"
+        enctype="multipart/form-data" style="margin-top:12px">
+    <input type="hidden" name="foreign_income" value="{{ '%.2f'|format(foreign_income_total) }}">
+    <input type="hidden" name="pdfo_foreign" value="{{ '%.2f'|format(foreign_pdfo_total) }}">
+    <input type="hidden" name="vz_foreign" value="{{ '%.2f'|format(foreign_vz_total) }}">
+    {% if has_trades %}
+    <input type="hidden" name="trades_profit" value="{{ '%.2f'|format(tax_result.net_profit_uah) }}">
+    <input type="hidden" name="pdfo_trades" value="{{ '%.2f'|format(tax_result.pdfo_trades) }}">
+    <input type="hidden" name="vz_trades" value="{{ '%.2f'|format(tax_result.vz_trades) }}">
+    {% endif %}
+    {% if drfo.has_drfo %}
+    <input type="hidden" name="row_10_13_income" value="{{ '%.2f'|format(drfo.row_10_13_income) }}">
+    <input type="hidden" name="row_10_13_pdfo" value="{{ '%.2f'|format(drfo.row_10_13_pdfo_withheld) }}">
+    <input type="hidden" name="row_10_13_vz" value="{{ '%.2f'|format(drfo.row_10_13_vz_withheld) }}">
+    <input type="hidden" name="row_11_3_income" value="{{ '%.2f'|format(drfo.row_11_3_income) }}">
+    {% endif %}
+    <div class="form-group">
+      <label for="draft_xml">Чернетка XML з ЕК (F0100215)</label>
+      <input type="file" id="draft_xml" name="xml" accept=".xml,.XML" required>
+    </div>
+    <div class="path-body" style="margin-bottom:10px">
+      Буде додано: <strong>R01010</strong> = {{ "%.2f"|format(foreign_income_total) }} /
+      {{ "%.2f"|format(foreign_pdfo_total) }} / {{ "%.2f"|format(foreign_vz_total) }}
+      (дохід / ПДФО / ВЗ){%- if has_trades -%}; <strong>R0108</strong> =
+      {{ "%.2f"|format(tax_result.net_profit_uah) }} /
+      {{ "%.2f"|format(tax_result.pdfo_trades) }} /
+      {{ "%.2f"|format(tax_result.vz_trades) }}
+      {%- endif -%}
+      {%- if drfo.has_drfo -%}
+      {% if drfo.row_10_13_income > 0 %}; <strong>R01013</strong> =
+      {{ "%.2f"|format(drfo.row_10_13_income) }} /
+      {{ "%.2f"|format(drfo.row_10_13_pdfo_withheld) }} /
+      {{ "%.2f"|format(drfo.row_10_13_vz_withheld) }} (дохід / ПДФО / ВЗ — агент утримав){% endif %}
+      {%- if drfo.row_11_3_income > 0 %}; <strong>R0113</strong> =
+      {{ "%.2f"|format(drfo.row_11_3_income) }} (неоподатковуваний){% endif %}
+      {%- endif %}.
+    </div>
+    <button type="submit" class="apply-btn">Завантажити патчений XML →</button>
+  </form>
+</div>
+
+<!-- Cover letter (шаблон відповіді на запит ДПС щодо рядка 10.10) -->
+<div class="letter-section">
+  <h3>Супровідний лист — якщо ДПС запитає документи до рядка 10.10</h3>
+  <p class="letter-hint">
+    Текст згенеровано автоматично — поля, які вдалося розпарсити з листа ДПС,
+    підставлені; решта виділені жовтим як <code>«________»</code>. Нижче
+    можна зібрати єдиний PDF для ЕК (лист + звіт Freedom24 ± F1419104).
+  </p>
+  <pre class="letter-box" id="coverLetter">{{ letter_text }}</pre>
+  <div class="letter-actions">
+    <button type="button" class="copy-btn" id="copyLetterBtn"
+            onclick="copyLetter()">Скопіювати текст</button>
+  </div>
+
+  {% if letter_ctx.letter1_vykh and not letter_ctx.zvit_nova_num %}
+  <div class="update-form">
+    <div class="label">Подав Звітну нову? Додай у п.4 її реєстраційний № і дату —
+      лист оновиться на місці.</div>
+    <div class="row">
+      <input type="text" id="zvitNovaNumIn" placeholder="реєстр. №"
+             autocomplete="off">
+      <input type="text" id="zvitNovaDateIn" placeholder="дата DD.MM.YYYY"
+             autocomplete="off" inputmode="numeric">
+      <button type="button" class="apply-btn" id="applyZvitNova"
+              onclick="applyZvitNova()">Вставити</button>
+    </div>
+    <div class="note">
+      Номер і дата з квитанції №2 у ЕК після успішної подачі Звітної нової.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Export: build the single merged PDF that ЕК «Листування з ДПС» expects -->
+  <div class="send-card" style="margin-top:14px">
+    <h4>📦 Зібрати єдиний PDF для ЕК (лист + звіт Freedom24 ± F1419104)</h4>
+    <div class="path">
+      <div class="path-body">
+        ЕК «Листування з ДПС» дозволяє прикріпити <strong>лише 1 файл</strong>
+        (PDF, ≤ 5 МБ). Завантаж тут PDF-звіт з Freedom24 (і F1419104 PDF,
+        якщо є) — модуль склеїть їх з цим супровідним листом в один файл
+        <code>Vidpovid_DPS_{{ tax_year }}.pdf</code>, готовий до відправки.
+      </div>
+    </div>
+    <form method="POST" action="{{ url_for('export_cabinet_pdf') }}"
+          enctype="multipart/form-data" style="margin-top:10px">
+      {# Hidden letter context — stateless endpoint re-renders letter from these #}
+      <input type="hidden" name="tax_year" value="{{ tax_year }}">
+      <input type="hidden" name="pib_nominative" value="{{ letter_ctx.pib_nominative or '' }}">
+      <input type="hidden" name="rnokpp" value="{{ letter_ctx.rnokpp or '' }}">
+      <input type="hidden" name="address" value="{{ letter_ctx.address or '' }}">
+      <input type="hidden" name="contact_email" value="{{ letter_ctx.contact_email or '' }}">
+      <input type="hidden" name="contact_phone" value="{{ letter_ctx.contact_phone or '' }}">
+      <input type="hidden" name="letter_vykh" value="{{ letter_ctx.letter_vykh or '' }}">
+      <input type="hidden" name="letter_date" value="{{ letter_ctx.letter_date or '' }}">
+      <input type="hidden" name="declaration_num" value="{{ letter_ctx.declaration_num or '' }}">
+      <input type="hidden" name="declaration_date" value="{{ letter_ctx.declaration_date or '' }}">
+      <input type="hidden" name="freedom24_account" value="{{ letter_ctx.freedom24_account or '' }}">
+      <input type="hidden" name="letter1_vykh" value="{{ letter_ctx.letter1_vykh or '' }}">
+      <input type="hidden" name="letter1_date" value="{{ letter_ctx.letter1_date or '' }}">
+      <input type="hidden" name="zvit_nova_num" value="{{ letter_ctx.zvit_nova_num or '' }}">
+      <input type="hidden" name="zvit_nova_date" value="{{ letter_ctx.zvit_nova_date or '' }}">
+      <input type="hidden" name="letter_total" value="{{ '%.2f'|format(letter_totals.letter_total) }}">
+      <input type="hidden" name="letter_pdfo" value="{{ '%.2f'|format(letter_totals.letter_pdfo) }}">
+      <input type="hidden" name="letter_vz" value="{{ '%.2f'|format(letter_totals.letter_vz) }}">
+      <div class="form-group">
+        <label for="freedom24_pdf">PDF-звіт Freedom24 за {{ tax_year }} рік
+          <span style="color:#dc2626">*</span></label>
+        <input type="file" id="freedom24_pdf" name="freedom24_pdf"
+               accept=".pdf,application/pdf" required>
+        <div class="note">Той самий звіт, який ти формуєш у freedom24.com (розділ
+          «Reports» → «General Report» → PDF).</div>
+      </div>
+      <div class="form-group">
+        <label for="f1419104_pdf">F1419104 — довідка з ДРФО у PDF
+          <span style="color:#94a3b8">(необов'язково)</span></label>
+        <input type="file" id="f1419104_pdf" name="f1419104_pdf"
+               accept=".pdf,application/pdf">
+        <div class="note">Якщо у тебе є PDF-версія довідки з ЕК — додай, її
+          згадка з'явиться у п. 3 листа. XML-версія (яку ти вже завантажив
+          для розрахунку) для цього файла не підходить — потрібен саме PDF.</div>
+      </div>
+      <button type="submit" class="apply-btn">Зібрати об'єднаний PDF →</button>
+    </form>
+  </div>
+
+  <div class="send-card" style="margin-top:14px">
+    <h4>📤 Як надіслати цей PDF у ДПС через ЕК</h4>
+    <div class="path">
+      <div class="path-title">1. Заповнити форму у «Листуванні з ДПС»</div>
+      <div class="path-body">
+        <code>cabinet.tax.gov.ua</code> → «Листування з ДПС» → «Створити документ».
+        Поля:
+        <ul>
+          <li><strong>Код ДПІ</strong>: <code>26 М.КИЇВ</code> (або твій регіон)</li>
+          <li><strong>Підрозділ</strong>: <code>15 ГУ ДПС У М.КИЄВІ</code> (єдина опція при м. Київ)</li>
+          <li><strong>Тип</strong>: <code>Відповідь на лист ДПС</code></li>
+          <li><strong>Тематика</strong>: <code>Контрольно-перевірочна робота</code>
+            (або <code>Податок на доходи фізичних осіб</code>, якщо перша недоступна)</li>
+          <li><strong>Короткий зміст</strong> (до 100 символів):
+            <div id="korotkyZmistBlock" style="display:flex;gap:8px;align-items:center;margin-top:4px">
+              <code id="korotkyZmist" style="flex:1;padding:4px 8px;background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;word-break:break-all">{{ korotky_zmist }}</code>
+              <button type="button" class="copy-btn" id="copyKorotkyBtn"
+                      onclick="copyKorotky()" style="flex-shrink:0">Копіювати</button>
+            </div>
+            <span style="color:#6b7280;font-size:11px">Довжина: <span id="korotkyLen">{{ korotky_zmist|length }}</span>/100</span>
+          </li>
+          <li><strong>Файл</strong>: <code>Vidpovid_DPS_{{ tax_year }}.pdf</code>
+            — той, що отримаєш з кнопки «Зібрати об'єднаний PDF» вище.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="path">
+      <div class="path-title">2. Підписати КЕП → «Надіслати»</div>
+      <div class="path-body">
+        Квитанція про доставку прийде у «Вхідні документи» протягом доби —
+        збережи скрін як доказ того, що відповіла у строк.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Wrap every «placeholder» in the cover-letter <pre> with a yellow span.
+// Uses textContent + createElement (never innerHTML) — safe-by-construction.
+function highlightPlaceholders() {
+  const el = document.getElementById('coverLetter');
+  const raw = el.textContent;
+  while (el.firstChild) el.removeChild(el.firstChild);
+  let last = 0;
+  for (const m of raw.matchAll(/«[^»]+»/g)) {
+    if (m.index > last) {
+      el.appendChild(document.createTextNode(raw.slice(last, m.index)));
+    }
+    const span = document.createElement('span');
+    span.className = 'ph';
+    span.textContent = m[0];
+    el.appendChild(span);
+    last = m.index + m[0].length;
+  }
+  if (last < raw.length) {
+    el.appendChild(document.createTextNode(raw.slice(last)));
+  }
+}
+
+function copyLetter() {
+  const el = document.getElementById('coverLetter');
+  const btn = document.getElementById('copyLetterBtn');
+  navigator.clipboard.writeText(el.innerText).then(() => {
+    btn.textContent = '✓ Скопійовано';
+    btn.classList.add('ok');
+    setTimeout(() => {
+      btn.textContent = 'Скопіювати текст';
+      btn.classList.remove('ok');
+    }, 2000);
+  });
+}
+
+function copyKorotky() {
+  const text = document.getElementById('korotkyZmist').textContent.trim();
+  const btn = document.getElementById('copyKorotkyBtn');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓';
+    btn.classList.add('ok');
+    setTimeout(() => {
+      btn.textContent = 'Копіювати';
+      btn.classList.remove('ok');
+    }, 2000);
+  });
+}
+
+function applyZvitNova() {
+  const numIn = document.getElementById('zvitNovaNumIn');
+  const dateIn = document.getElementById('zvitNovaDateIn');
+  const btn = document.getElementById('applyZvitNova');
+  const num = numIn.value.trim();
+  const date = dateIn.value.trim();
+  if (!num || !date) {
+    numIn.focus();
+    return;
+  }
+  // Point 4 ends with: (реєстраційний «№_______» від «__.__.YYYY»).
+  // Replace both placeholders in one regex hit, then re-highlight.
+  const el = document.getElementById('coverLetter');
+  const updated = el.textContent.replace(
+    /\(реєстраційний «[^»]+» від «[^»]+»\)\./,
+    `(реєстраційний ${num} від ${date}).`
+  );
+  el.textContent = updated;
+  highlightPlaceholders();
+  btn.textContent = '✓ Оновлено';
+  btn.classList.add('ok');
+  setTimeout(() => {
+    btn.textContent = 'Вставити';
+    btn.classList.remove('ok');
+  }, 2000);
+}
+
+highlightPlaceholders();
+</script>
 
 <div style="margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0">
   <a href="/" class="btn-secondary">← Розрахувати інший файл</a>

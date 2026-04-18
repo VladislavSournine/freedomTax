@@ -113,6 +113,62 @@
     /* Column headings */
     .col-heading { font-size: 11px; font-weight: 700; text-transform: uppercase;
                    letter-spacing: .05em; color: #94a3b8; margin-bottom: 8px; }
+
+    /* Hint — a readable hint paragraph (darker and larger than .note) */
+    .hint { font-size: 13px; color: #475569; line-height: 1.5; }
+    .hint code { background: #f1f5f9; padding: 1px 4px; border-radius: 3px;
+                 font-size: 12px; }
+    .hint strong { color: #1e293b; }
+
+    /* Cover letter */
+    .letter-section { margin-top: 20px; }
+    .letter-section h3 { font-size: 13px; margin-bottom: 8px; color: #1e293b; }
+    .letter-hint { font-size: 13px; color: #475569; line-height: 1.5;
+                   margin-bottom: 10px; }
+    .letter-hint code { background: #f1f5f9; padding: 1px 4px; border-radius: 3px;
+                       font-size: 12px; }
+    .letter-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+                  padding: 14px 16px; font-family: ui-monospace, SFMono-Regular,
+                  Menlo, Consolas, monospace; font-size: 12px; line-height: 1.55;
+                  white-space: pre-wrap; color: #1e293b; overflow-x: auto; }
+    .letter-box .ph { background: #fef3c7; padding: 0 3px; border-radius: 2px;
+                      color: #92400e; }
+    .letter-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .copy-btn { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+                border-radius: 6px; padding: 6px 12px; font-size: 12px;
+                cursor: pointer; font-family: inherit; }
+    .copy-btn:hover { background: #e2e8f0; }
+    .copy-btn.ok { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+
+    /* Inline update form under letter (retroactively add Звітна нова №/date) */
+    .update-form { background: #f8fafc; border: 1px solid #e2e8f0;
+                   border-radius: 8px; padding: 12px 14px; margin-top: 12px; }
+    .update-form .label { font-size: 12px; font-weight: 600; color: #1e293b;
+                          margin-bottom: 8px; }
+    .update-form .row { display: grid; grid-template-columns: 1fr 1fr auto;
+                        gap: 8px; }
+    .update-form input { width: 100%; border: 1px solid #d1d5db;
+                         border-radius: 5px; padding: 6px 10px; font-size: 13px; }
+    .update-form .apply-btn { background: #2563eb; color: #fff; border: none;
+                              border-radius: 5px; padding: 6px 14px;
+                              font-size: 13px; font-weight: 600; cursor: pointer; }
+    .update-form .apply-btn:hover { background: #1d4ed8; }
+    .update-form .apply-btn.ok { background: #16a34a; }
+    .update-form .note { font-size: 12px; color: #64748b; margin-top: 6px; }
+
+    /* "How to send" card under the letter */
+    .send-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+                 padding: 14px 16px; margin-top: 14px; }
+    .send-card h4 { font-size: 13px; color: #1e40af; margin-bottom: 8px; }
+    .send-card .path { margin-bottom: 10px; }
+    .send-card .path:last-child { margin-bottom: 0; }
+    .send-card .path-title { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .send-card .path-body { font-size: 13px; color: #475569; line-height: 1.5;
+                            margin-top: 2px; }
+    .send-card code { background: #dbeafe; color: #1e40af; padding: 1px 5px;
+                      border-radius: 3px; font-size: 12px; }
+    .send-card ul { margin: 6px 0 0 18px; font-size: 13px; color: #475569;
+                    line-height: 1.6; }
   </style>
 </head>
 <body>
